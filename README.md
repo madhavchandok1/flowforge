@@ -1,135 +1,158 @@
-# FlowForge
-*A Behavioral Project Flow Manager Inspired by Azure Boards*
+# Flow Forge Backend (FastAPI)
+
+**Flow Forge** is a lightweight project management backend inspired by tools like Azure Boards. It allows managing projects (called Forges), epics (Blueprints), stories (Modules), tasks/bugs (Actions), and iteration-based dashboards with drag-and-drop support for task statuses.
 
 ---
 
-## 🌟 Overview
+## 🚀 Tech Stack
 
-**FlowForge** is a project management Web API and UI platform inspired by Azure Boards, but with a fresh twist. It emphasizes the **mental and emotional state of engineering work**, not just task status. This system helps teams track tasks, manage sprints, and gain deeper insights into developer flow, blockers, and productivity—based on *how* work feels, not just *when* it's done.
-
----
-
-## 🚀 Core Concepts
-
-### Emotional Flow States (vs. Traditional Task Status)
-- **Inspired** – You’re excited to start this task.
-- **In Flow** – You’re focused and making progress.
-- **Blocked** – You’re stuck due to an external or technical reason.
-- **Frustrated** – You’re facing repeated issues or scope creep.
-- **Complete** – The task is done and verified.
-
-These states allow for a more **empathetic and intelligent workflow** system.
+- **Backend Framework**: FastAPI
+- **ORM**: SQLAlchemy
+- **Migrations**: Alembic
+- **Database**: PostgreSQL
+- **Testing**: Pytest / FastAPI TestClient
 
 ---
 
-## 📦 Key Features
+## 📁 Folder Structure
 
-### ✅ Projects
-- Create and manage projects
-- Add members, tags, and goals
-- Choose default workflow type (classic/emotional)
-
-### 📌 Backlog
-- Central list of pending work items
-- Sort/filter by priority, type, labels
-- Drag items into upcoming sprints
-
-### 🧩 Flow Items (Tasks)
-- Title, description, type (Bug, Feature, Task, Research)
-- Emotional State (customizable)
-- Priority and effort level (1–10 scale)
-- Tags and labels
-- Linked Microjournals (small status entries / reflections)
-
-### 🌀 Sprint Management
-- Create sprints with a name and duration
-- Assign flow items to sprint
-- View progress via:
-  - Emotional state trends
-  - Task completion counts
-  - Blockers over time
-
-### 🗂 Boards
-- Kanban-style board view
-- Toggle between:
-  - Emotional state swimlanes
-  - Traditional status swimlanes
-  - Task type swimlanes
-- Drag-and-drop interface
-- Quick add/edit items
+```bash
+app/
+├── main.py
+├── db/
+│   └── base.py
+├── models/
+├── schemas/
+├── routers/
+├── core/
+└── utils/
+```
 
 ---
 
-## 🧠 Advanced Features
+## ✅ Implementation Checklist
 
-### Personas (optional)
-- User-defined work personas like:
-  - The Strategist
-  - The Finisher
-  - The Dreamer
-- Used to match tasks with users better
+### 🏗️ Initial Setup
 
-### Microjournaling
-- Lightweight, inline journal entries on tasks
-- Used to track mental state and note blockers
-- Helps understand patterns in team energy and focus
+  <li>Set up project folder structure (`app/`, `models/`, `schemas/`, `routers/`, `db/`, etc.)
+  <li>Create and activate virtual environment
+  <li>Install dependencies: `fastapi`, `uvicorn[standard]`, `sqlalchemy`, `alembic`, `pydantic`, `psycopg2-binary`, `python-dotenv`
+  <li>Initialize Git and `.gitignore`
+  <li>Create `main.py` and include API routers
+  <li>Set up `.env` file for DB config
+  <li>Add CORS middleware
+  <li>Configure PostgreSQL and Alembic
+  <li>Create SQLAlchemy base model in `db/base.py`
 
-### Analytics & Visualizations
-- Weekly **Flow Score**
-- **Emotional Burndown** chart
-- **Blocker Frequency** tracker
-- **Task Momentum** chart
+### 🧱 Forge (Project)
+
+  <li>Create `Forge` model
+  <li>Create schemas: `ForgeCreate`, `ForgeUpdate`, `ForgeOut`
+  <li>Implement endpoints:
+  <li>GET /forges
+  <li>POST /forges
+  <li>GET /forges/{forge_id}
+  <li>PUT /forges/{forge_id}
+  <li>DELETE /forges/{forge_id}
+  <li>Add `routers/forges.py`
+  <li>Write tests
+
+### 📘 Blueprint (Epic)
+
+  <li>Create `Blueprint` model (FK to Forge)
+  <li>Create schemas: `BlueprintCreate`, `BlueprintUpdate`, `BlueprintOut`
+  <li>Implement endpoints:
+  <li>GET /forges/{forge_id}/blueprints
+  <li>POST /forges/{forge_id}/blueprints
+  <li>PUT /blueprints/{blueprint_id}
+  <li>DELETE /blueprints/{blueprint_id}
+
+### 📦 Module (Story)
+
+  <li>Create `Module` model (FK to Blueprint)
+  <li>Create schemas: `ModuleCreate`, `ModuleUpdate`, `ModuleOut`
+  <li>Implement endpoints:
+  <li>GET /blueprints/{blueprint_id}/modules
+  <li>POST /blueprints/{blueprint_id}/modules
+  <li>PUT /modules/{module_id}
+  <li>DELETE /modules/{module_id}
+
+### ⚙️ Action (Task / Glitch)
+
+  <li>Create `Action` model (FK to Module)
+  <li>Add enum: `ActionType` (`task`, `glitch`)
+  <li>Add enum: `ActionStatus` (`queued`, `forging`, `jammed`, `crafted`)
+  <li>Create schemas: `ActionCreate`, `ActionUpdate`, `ActionOut`
+  <li>Implement endpoints:
+  <li>GET /modules/{module_id}/actions
+  <li>POST /modules/{module_id}/actions
+  <li>PUT /actions/{action_id}
+  <li>DELETE /actions/{action_id}
+  <li>PATCH /actions/{action_id}/status
+
+### ⏳ Iteration
+
+  <li>Create `Iteration` model (FK to Forge)
+  <li>Add `iteration_id` field to `Action`
+  <li>Create schemas: `IterationCreate`, `IterationUpdate`, `IterationOut`
+  <li>Implement endpoints:
+  <li>GET /forges/{forge_id}/iterations
+  <li>POST /forges/{forge_id}/iterations
+  <li>PUT /iterations/{iteration_id}
+  <li>DELETE /iterations/{iteration_id}
+  <li>GET /iterations/{iteration_id}/actions
+
+### 📥 Drag & Drop Logic (Kanban)
+
+  <li>Implement `PATCH /actions/{action_id}/status`
+  <li>(Optional) Validate transitions (`queued → forging → crafted`)
+  <li>(Optional) Add audit log for status changes
+  <li>Implement dashboard query for iteration with grouped statuses
+
+### 🧪 Testing & QA
+
+  <li>Use `pytest` or FastAPI `TestClient`
+  <li>Test all endpoints with valid and invalid inputs
+  <li>Seed sample data for dashboards
+  <li>Use Swagger UI to test all routes
+
+### 🧭 Final Touches
+
+  <li>Create `.env.example`
+  <li>Write `README.md` with setup guide and API overview
+  <li>(Optional) Add code formatter/linter (black, isort, flake8)
+  <li>(Optional) Add pre-commit hooks
 
 ---
 
-## 🔧 Tech Stack (Proposed)
+## 🛠️ Future Add-ons
 
-- **.NET 8 Web API**
-- **Entity Framework Core** (SQLite or PostgreSQL)
-- **React / Blazor / Vue** frontend
-- **Swagger / OpenAPI** docs
-- Optional:
-  - SignalR for real-time updates
-  - D3.js or Chart.js for visual analytics
+  <li>User registration/login (JWT)
+  <li>Notifications system
+  <li>Role-based access (admin, contributor)
+  <li>Export/Import Forge data
 
 ---
 
-## 💡 Why It’s Unique
+## 📚 Terminology Map
 
-- Emotional intelligence meets productivity tooling
-- Not just about what’s done—but **how it’s experienced**
-- Focused on **developer well-being**, not just output
-
----
-
-## 🖼 UI Summary
-
-- **Dashboard**: Projects overview, flow score widget
-- **Backlog View**: List of upcoming tasks by priority
-- **Sprint View**: Task management within active sprint
-- **Board View**: Tasks shown by emotional state (or traditional status)
-- **Flow Item Detail**: Full task info + microjournaling log
+| Concept     | Name in Flow Forge           |
+| ----------- | ---------------------------- |
+| Project     | Forge                        |
+| Epic        | Blueprint                    |
+| Story       | Module                       |
+| Task / Bug  | Action (type: task / glitch) |
+| To Do       | Queued                       |
+| In Progress | Forging                      |
+| Blocked     | Jammed                       |
+| Completed   | Crafted                      |
 
 ---
 
-## 🔜 Roadmap (Phases)
+## 📞 Contact
 
-| Phase | Features                                                      |
-|-------|---------------------------------------------------------------|
-| MVP   | Projects, Flow Items, Emotional Board View, Backlog, Sprints |
-| v1.1  | Microjournals, Personas, Analytics Dashboard                  |
-| v1.2  | GitHub Integration, Real-Time Updates, Custom State Mapping   |
-| v2.0  | AI Insights, Natural Language Task Parsing, Mobile View       |
+Want to collaborate or need help setting this up? Reach out to the maintainer.
 
 ---
 
-## 📄 License
-
-MIT License (Proposed) – Free to use and extend.
-
----
-
-## 👤 Author & Credits
-
-FlowForge is conceptualized and engineered by Madhav Chandok, with inspiration from Azure Boards and modern behavioral design principles in productivity.
-
+Happy Forging! 🔨

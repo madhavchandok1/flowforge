@@ -1,0 +1,12 @@
+alembic
+fastapi
+psycopg2-binary
+pydantic
+python-dotenv
+sqlalchemy
+uvicorn[standard]
+
+#optional libraries
+black
+isort
+flake8

@@ -1,0 +1,22 @@
+.theme-toggle-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 0.5rem 0 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+  outline: none;
+}
+.theme-toggle-icon .icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.theme-toggle-icon .sun-moon {
+  display: block;
+  transition: transform 0.4s;
+}
+.theme-toggle-icon:active .sun-moon {
+  transform: rotate(180deg) scale(0.95);
+} 

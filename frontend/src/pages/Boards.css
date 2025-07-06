@@ -1,0 +1,23 @@
+.boards-root {
+  padding: 2.5rem 2rem;
+  font-family: var(--ff-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+.boards-root h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+.boards-placeholder {
+  font-size: 1.1rem;
+  color: #7b7e8e;
+  margin-top: 2rem;
+  text-align: center;
+}
+body[data-theme='dark'] .boards-placeholder {
+  color: #b0b3c6;
+} 

@@ -1,0 +1,110 @@
+.projects-root {
+  padding: 2.5rem 2rem;
+  font-family: var(--ff-primary);
+}
+.projects-root h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+}
+.project-card {
+  background: var(--color-card-light);
+  color: var(--color-text-light);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  padding: 1.5rem 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.project-card:hover {
+  box-shadow: 0 4px 24px rgba(99,102,241,0.10);
+  background: var(--color-secondary);
+  color: #fff;
+}
+body[data-theme='dark'] .project-card {
+  background: var(--color-card-dark);
+  color: var(--color-text-dark);
+}
+.project-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.project-desc {
+  font-size: 0.98rem;
+  color: #7b7e8e;
+}
+body[data-theme='dark'] .project-desc {
+  color: #b0b3c6;
+}
+.project-details {
+  padding: 2rem 1.5rem;
+  background: var(--color-card-light);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  font-family: var(--ff-primary);
+  max-width: 600px;
+  margin: 2rem auto;
+  transition: background 0.2s, color 0.2s;
+}
+body[data-theme='dark'] .project-details {
+  background: var(--color-card-dark);
+  color: var(--color-text-dark);
+}
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 1.2rem;
+  font-weight: 500;
+}
+.project-overview, .project-work {
+  margin-top: 1.5rem;
+}
+.overview-title, .work-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.overview-content {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+.work-hierarchy {
+  color: #7b7e8e;
+  font-size: 0.98rem;
+}
+body[data-theme='dark'] .work-hierarchy {
+  color: #b0b3c6;
+}
+
+@media (max-width: 768px) {
+  .projects-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .projects-root {
+    padding: 1rem 0.5rem;
+  }
+  .projects-root h1 {
+    font-size: 1.3rem;
+  }
+  .project-card, .project-details {
+    padding: 1rem 0.5rem;
+    min-width: unset;
+  }
+  .overview-content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+} 

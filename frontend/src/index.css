@@ -1,0 +1,37 @@
+/* Import Inter font (already in index.html) */
+:root {
+  --ff-primary: 'Inter', sans-serif;
+  --color-bg-light: #f7f8fa;
+  --color-bg-dark: #181a20;
+  --color-text-light: #181a20;
+  --color-text-dark: #f7f8fa;
+  --color-primary: #6366f1;
+  --color-secondary: #a5b4fc;
+  --color-accent: #f59e42;
+  --color-card-light: #fff;
+  --color-card-dark: #23262f;
+  --sidebar-width: 260px;
+}
+
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+body {
+  margin: 0;
+  font-family: var(--ff-primary);
+  background: var(--color-bg-light);
+  color: var(--color-text-light);
+  transition: background 0.2s, color 0.2s;
+}
+body[data-theme='dark'] {
+  background: var(--color-bg-dark);
+  color: var(--color-text-dark);
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}

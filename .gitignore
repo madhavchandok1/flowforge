@@ -103,4 +103,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # OS files
-Thumbs.db 
+Thumbs.db
+
+# OpenClaude
+.openclaude/

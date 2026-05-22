@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useProjectStore } from "@/stores/useProjectStore";
-import { KANBAN_COLUMNS, ACTION_TYPE_LABELS, STATUS_LABELS } from "@/lib/constants";
+import { KANBAN_COLUMNS, ACTION_TYPE_LABELS, STATUS_LABELS, ITEM_TYPE } from "@/lib/constants";
+import CreateItemDialog from "@/components/CreateItemDialog";
 import { users } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
   TooltipContent,
@@ -38,13 +38,10 @@ import {
   ChevronRight,
   BookOpen,
   Layers,
-  CircleDot,
   Bug,
+  NotepadText,
   PanelLeftClose,
   PanelLeftOpen,
-  Pencil,
-  X,
-  Save,
   Plus,
   Users,
 } from "lucide-react";
@@ -105,9 +102,11 @@ function DraggableTaskRow({ action, onClick }) {
             )}
           >
             {isGlitch ? (
-              <Bug size={12} className="text-destructive shrink-0" />
+              <Bug size={12} className="text-destructive shrink-0 drop-shadow-[0_0_4px_rgba(239,68,68,0.5)]" />
+            ) : action.status === "crafted" ? (
+              <NotepadText size={12} className="text-green-500 shrink-0 drop-shadow-[0_0_4px_rgba(34,197,94,0.5)]" />
             ) : (
-              <CircleDot size={12} className="text-muted-foreground/60 shrink-0" />
+              <NotepadText size={12} className="text-amber-500 shrink-0 drop-shadow-[0_0_4px_rgba(245,158,11,0.4)]" />
             )}
             <span className="text-xs text-foreground/80 truncate flex-1 leading-tight">
               {action.title}
@@ -180,201 +179,6 @@ function DraggableKanbanCard({ action, onClick }) {
 }
 
 // ─────────────────────────────────────────────
-// Task Detail Dialog
-// ─────────────────────────────────────────────
-function TaskDetailDialog({ action, open, onClose, onSave }) {
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({});
-
-  if (!action) return null;
-
-  const startEdit = () => {
-    setForm({
-      title: action.title,
-      description: action.description || "",
-      priority: action.priority,
-      assigneeId: action.assignee?.id || "",
-      type: action.type,
-    });
-    setEditing(true);
-  };
-
-  const handleSave = () => {
-    const assignee = form.assigneeId ? users.find((u) => u.id === form.assigneeId) : null;
-    onSave(action.id, {
-      title: form.title,
-      description: form.description,
-      priority: form.priority,
-      type: form.type,
-      assignee,
-    });
-    setEditing(false);
-  };
-
-  const handleCancel = () => {
-    setEditing(false);
-  };
-
-  const isGlitch = action.type === "glitch";
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-left pr-8">
-            {isGlitch ? (
-              <Bug size={18} className="text-destructive shrink-0" />
-            ) : (
-              <CircleDot size={18} className="text-primary shrink-0" />
-            )}
-            <span className="truncate">{editing ? "Edit Task" : action.title}</span>
-          </DialogTitle>
-        </DialogHeader>
-
-        {editing ? (
-          /* ── Edit Mode ── */
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <Input
-                value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                rows={3}
-                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Type</label>
-                <select
-                  value={form.type}
-                  onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-                  className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="task">Task</option>
-                  <option value="glitch">Glitch</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Priority</label>
-                <select
-                  value={form.priority}
-                  onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
-                  className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Assignee</label>
-              <select
-                value={form.assigneeId}
-                onChange={(e) => setForm((f) => ({ ...f, assigneeId: e.target.value }))}
-                className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">Unassigned</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} ({u.role})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        ) : (
-          /* ── View Mode ── */
-          <div className="space-y-4 py-2">
-            {action.description && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
-                  Description
-                </p>
-                <p className="text-sm text-foreground/80 leading-relaxed">
-                  {action.description}
-                </p>
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
-                  Status
-                </p>
-                <Badge variant={action.status ? "default" : "secondary"}>
-                  {action.status ? STATUS_LABELS[action.status] : "Backlog"}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
-                  Type
-                </p>
-                <Badge variant={isGlitch ? "danger" : "info"}>
-                  {isGlitch && <AlertCircle size={10} className="mr-0.5" />}
-                  {ACTION_TYPE_LABELS[action.type]}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
-                  Priority
-                </p>
-                <span className={cn(
-                  "text-xs px-2 py-1 rounded font-medium capitalize",
-                  action.priority === "high" && "bg-destructive/10 text-destructive",
-                  action.priority === "medium" && "bg-status-queued/20 text-yellow-700 dark:text-yellow-300",
-                  action.priority === "low" && "bg-muted text-muted-foreground"
-                )}>
-                  {action.priority}
-                </span>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
-                  Assignee
-                </p>
-                <div className="flex items-center gap-2">
-                  <AssigneeAvatar user={action.assignee} size="sm" />
-                  <span className="text-sm">
-                    {action.assignee?.name || "Unassigned"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <DialogFooter>
-          {editing ? (
-            <>
-              <Button variant="outline" size="sm" onClick={handleCancel}>
-                <X size={14} />
-                Cancel
-              </Button>
-              <Button size="sm" onClick={handleSave}>
-                <Save size={14} />
-                Save
-              </Button>
-            </>
-          ) : (
-            <Button variant="outline" size="sm" onClick={startEdit}>
-              <Pencil size={14} />
-              Edit
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// ─────────────────────────────────────────────
 // Tree Node (collapsible, with connector lines)
 // ─────────────────────────────────────────────
 function TreeNode({
@@ -443,7 +247,7 @@ function TreeNode({
       </button>
       <div
         className={cn(
-          "overflow-hidden transition-all duration-200 ease-out",
+          "overflow-hidden transition-[max-height,opacity] duration-200 ease-out",
           open ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
         )}
       >
@@ -486,7 +290,7 @@ function BacklogSidebar({ actions, blueprints, modules, onTaskClick }) {
 
   if (collapsed) {
     return (
-      <div className="flex flex-col items-center w-[48px] shrink-0 bg-card border-r transition-all duration-300">
+      <div className="flex flex-col items-center w-[48px] shrink-0 bg-card border-r transition-[width] duration-300">
         <div className="flex items-center justify-center h-12 border-b w-full">
           <button
             onClick={() => setCollapsed(false)}
@@ -510,7 +314,7 @@ function BacklogSidebar({ actions, blueprints, modules, onTaskClick }) {
   }
 
   return (
-    <div className="flex flex-col w-[300px] shrink-0 bg-card border-r transition-all duration-300 overflow-hidden">
+    <div className="flex flex-col w-[300px] shrink-0 bg-card border-r transition-[width] duration-300 overflow-hidden">
       <div className="flex items-center gap-2 h-12 px-3 border-b shrink-0">
         <Inbox size={15} className="text-muted-foreground" />
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -529,7 +333,7 @@ function BacklogSidebar({ actions, blueprints, modules, onTaskClick }) {
       <div
         ref={setNodeRef}
         className={cn(
-          "flex-1 overflow-hidden transition-colors duration-150",
+          "flex-1 overflow-hidden",
           isOver ? "bg-primary/10 ring-2 ring-primary/30 ring-inset" : ""
         )}
       >
@@ -620,7 +424,7 @@ function KanbanColumn({ column, actions, onTaskClick, groupByUser }) {
       <div
         ref={setNodeRef}
         className={cn(
-          "flex-1 space-y-2 p-2 rounded-lg overflow-y-auto transition-colors duration-150",
+          "flex-1 space-y-2 p-2 rounded-lg overflow-y-auto",
           isOver ? "bg-primary/10 ring-2 ring-primary/30" : "bg-muted/30"
         )}
       >
@@ -663,10 +467,10 @@ export default function BoardDetailPage() {
   const { boardId } = useParams();
   const navigate = useNavigate();
   const getBoard = useProjectStore((s) => s.getBoard);
-  const getProject = useProjectStore((s) => s.getProject);
-  const getIterationsForProject = useProjectStore((s) => s.getIterationsForProject);
+  const getForge = useProjectStore((s) => s.getForge);
+  const getIterationsForForge = useProjectStore((s) => s.getIterationsForForge);
   const getActionsForBoard = useProjectStore((s) => s.getActionsForBoard);
-  const getBlueprintsForProject = useProjectStore((s) => s.getBlueprintsForProject);
+  const getBlueprintsForForge = useProjectStore((s) => s.getBlueprintsForForge);
   const updateActionStatus = useProjectStore((s) => s.updateActionStatus);
   const updateAction = useProjectStore((s) => s.updateAction);
   const createIteration = useProjectStore((s) => s.createIteration);
@@ -674,16 +478,16 @@ export default function BoardDetailPage() {
 
   const [activeId, setActiveId] = useState(null);
   const [selectedSprint, setSelectedSprint] = useState(null);
-  const [selectedTask, setSelectedTask] = useState(null);
+  const [editingTask, setEditingTask] = useState(null);
   const [sprintDialogOpen, setSprintDialogOpen] = useState(false);
   const [sprintForm, setSprintForm] = useState({ name: "", startDate: "", endDate: "" });
   const [groupByUser, setGroupByUser] = useState(false);
   const [filterUser, setFilterUser] = useState("all");
 
   const board = getBoard(boardId);
-  const project = board ? getProject(board.projectId) : null;
-  const iterations = board ? getIterationsForProject(board.projectId) : [];
-  const blueprints = board ? getBlueprintsForProject(board.projectId) : [];
+  const forge = board ? getForge(board.forgeId) : null;
+  const iterations = board ? getIterationsForForge(board.forgeId) : [];
+  const blueprints = board ? getBlueprintsForForge(board.forgeId) : [];
 
   // Auto-select first sprint when iterations load
   useEffect(() => {
@@ -696,7 +500,7 @@ export default function BoardDetailPage() {
   const allActions = board ? getActionsForBoard(board.id) : [];
 
   // Backlog: ALL unassigned tasks regardless of sprint
-  const unassignedActions = allActions.filter((a) => a.status === null);
+  const unassignedActions = allActions.filter((a) => a.status === null || a.status === "drafted");
 
   // Kanban: assigned tasks filtered by sprint and optionally by user
   const assignedActions = allActions.filter((a) => {
@@ -712,7 +516,7 @@ export default function BoardDetailPage() {
 
   const activeAction = allActions.find((a) => a.id === activeId);
 
-  if (!board || !project) {
+  if (!board || !forge) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <p className="text-lg font-medium">Board not found</p>
@@ -761,7 +565,7 @@ export default function BoardDetailPage() {
   const handleCreateSprint = () => {
     if (!sprintForm.name.trim() || !sprintForm.startDate || !sprintForm.endDate) return;
     createIteration({
-      projectId: project.id,
+      forgeId: forge.id,
       name: sprintForm.name.trim(),
       startDate: sprintForm.startDate,
       endDate: sprintForm.endDate,
@@ -770,12 +574,7 @@ export default function BoardDetailPage() {
     setSprintDialogOpen(false);
   };
 
-  const handleTaskClick = (action) => setSelectedTask(action);
-  const handleTaskSave = (actionId, updates) => {
-    updateAction(actionId, updates);
-    const updated = allActions.find((a) => a.id === actionId);
-    if (updated) setSelectedTask({ ...updated, ...updates });
-  };
+  const handleTaskClick = (action) => setEditingTask(action);
 
   return (
     <div className="flex flex-col -m-6" style={{ height: "calc(100vh - 64px)" }}>
@@ -788,13 +587,13 @@ export default function BoardDetailPage() {
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
-              style={{ backgroundColor: project.color }}
+              style={{ backgroundColor: forge.color }}
             >
               <span className="font-bold text-sm">{board.name.charAt(0)}</span>
             </div>
             <div>
               <h2 className="text-xl font-bold tracking-tight">{board.name}</h2>
-              <p className="text-sm text-muted-foreground">{project.name}</p>
+              <p className="text-sm text-muted-foreground">{forge.name}</p>
             </div>
           </div>
         </div>
@@ -890,13 +689,22 @@ export default function BoardDetailPage() {
         </DragOverlay>
       </DndContext>
 
-      {/* Task Detail Dialog */}
-      <TaskDetailDialog
-        action={selectedTask}
-        open={!!selectedTask}
-        onClose={() => setSelectedTask(null)}
-        onSave={handleTaskSave}
-      />
+      {/* Edit Task Dialog — reuses CreateItemDialog */}
+      {(() => {
+        const mod = editingTask ? modules.find((m) => m.id === editingTask.moduleId) : null;
+        const bp = mod ? blueprints.find((b) => b.id === mod.blueprintId) : null;
+        const breadcrumb = [forge.name, bp?.name, mod?.name].filter(Boolean);
+        return (
+          <CreateItemDialog
+            open={!!editingTask}
+            onClose={() => setEditingTask(null)}
+            type={editingTask?.type === "glitch" ? ITEM_TYPE.BUG : ITEM_TYPE.TASK}
+            item={editingTask}
+            breadcrumb={editingTask ? breadcrumb : []}
+            parentContext={{ forge }}
+          />
+        );
+      })()}
 
       {/* Create Sprint Dialog */}
       <Dialog open={sprintDialogOpen} onOpenChange={setSprintDialogOpen}>

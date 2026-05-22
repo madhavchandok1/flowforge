@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import {
-  projects as mockProjects,
+  forges as mockForges,
   blueprints as mockBlueprints,
   modules as mockModules,
   actions as mockActions,
@@ -10,31 +10,34 @@ import {
 import { STATUS } from "@/lib/constants";
 
 export const useProjectStore = create((set, get) => ({
-  projects: mockProjects,
+  forges: mockForges,
   blueprints: mockBlueprints,
   modules: mockModules,
   actions: mockActions,
   boards: mockBoards,
   iterations: mockIterations,
 
-  // ── Project getters ──
-  getProject: (id) => get().projects.find((p) => p.id === id),
+  // ── Forge getters ──
+  getForge: (id) => get().forges.find((f) => f.id === id),
 
-  getBlueprintsForProject: (projectId) =>
-    get().blueprints.filter((b) => b.projectId === projectId),
+  getBlueprintsForForge: (forgeId) =>
+    get().blueprints.filter((b) => b.forgeId === forgeId),
 
   getModulesForBlueprint: (blueprintId) =>
     get().modules.filter((m) => m.blueprintId === blueprintId),
 
   getActionsForModule: (moduleId) =>
-    get().actions.filter((a) => a.moduleId === moduleId),
+    get().actions.filter((a) => a.moduleId === moduleId && !a.parentId),
+
+  getSubtasksForAction: (actionId) =>
+    get().actions.filter((a) => a.parentId === actionId),
 
   getActionsByStatus: (status) =>
     get().actions.filter((a) => a.status === status),
 
-  getActionsForProject: (projectId) => {
+  getActionsForForge: (forgeId) => {
     const blueprintIds = get()
-      .blueprints.filter((b) => b.projectId === projectId)
+      .blueprints.filter((b) => b.forgeId === forgeId)
       .map((b) => b.id);
     const moduleIds = get()
       .modules.filter((m) => blueprintIds.includes(m.blueprintId))
@@ -45,20 +48,20 @@ export const useProjectStore = create((set, get) => ({
   // ── Board getters ──
   getBoard: (id) => get().boards.find((b) => b.id === id),
 
-  getBoardsForProject: (projectId) =>
-    get().boards.filter((b) => b.projectId === projectId),
+  getBoardsForForge: (forgeId) =>
+    get().boards.filter((b) => b.forgeId === forgeId),
 
   // ── Iteration getters ──
   getIteration: (id) => get().iterations.find((i) => i.id === id),
 
-  getIterationsForProject: (projectId) =>
-    get().iterations.filter((i) => i.projectId === projectId),
+  getIterationsForForge: (forgeId) =>
+    get().iterations.filter((i) => i.forgeId === forgeId),
 
   // ── Board-scoped action getters ──
   getActionsForBoard: (boardId, iterationId) => {
     const board = get().getBoard(boardId);
     if (!board) return [];
-    let actions = get().getActionsForProject(board.projectId);
+    let actions = get().getActionsForForge(board.forgeId);
     if (iterationId) {
       actions = actions.filter((a) => a.iterationId === iterationId);
     }
@@ -68,10 +71,15 @@ export const useProjectStore = create((set, get) => ({
   getUnassignedActionsForBoard: (boardId, iterationId) => {
     return get()
       .getActionsForBoard(boardId, iterationId)
-      .filter((a) => a.status === null);
+      .filter((a) => a.status === null || a.status === STATUS.DRAFTED);
   },
 
   // ── Mutations ──
+  createForge: (forge) =>
+    set((state) => ({
+      forges: [...state.forges, { ...forge, id: `forge-${Date.now()}`, createdAt: new Date().toISOString().slice(0, 10), members: [] }],
+    })),
+
   updateActionStatus: (actionId, newStatus) =>
     set((state) => ({
       actions: state.actions.map((a) =>
@@ -84,6 +92,58 @@ export const useProjectStore = create((set, get) => ({
       actions: state.actions.map((a) =>
         a.id === actionId ? { ...a, ...updates } : a
       ),
+    })),
+
+  createBlueprint: (blueprint) =>
+    set((state) => ({
+      blueprints: [...state.blueprints, { ...blueprint, id: `bp-${Date.now()}` }],
+    })),
+
+  updateBlueprint: (blueprintId, updates) =>
+    set((state) => ({
+      blueprints: state.blueprints.map((b) =>
+        b.id === blueprintId ? { ...b, ...updates } : b
+      ),
+    })),
+
+  createModule: (mod) =>
+    set((state) => ({
+      modules: [...state.modules, { ...mod, id: `mod-${Date.now()}` }],
+    })),
+
+  updateModule: (moduleId, updates) =>
+    set((state) => ({
+      modules: state.modules.map((m) =>
+        m.id === moduleId ? { ...m, ...updates } : m
+      ),
+    })),
+
+  createAction: (action) =>
+    set((state) => ({
+      actions: [...state.actions, {
+        ...action,
+        id: `act-${Date.now()}`,
+        status: action.status || null,
+        iterationId: action.iterationId || null,
+        parentId: action.parentId || null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }],
+    })),
+
+  deleteBlueprint: (blueprintId) =>
+    set((state) => ({
+      blueprints: state.blueprints.filter((b) => b.id !== blueprintId),
+    })),
+
+  deleteModule: (moduleId) =>
+    set((state) => ({
+      modules: state.modules.filter((m) => m.id !== moduleId),
+    })),
+
+  deleteAction: (actionId) =>
+    set((state) => ({
+      actions: state.actions.filter((a) => a.id !== actionId),
     })),
 
   createBoard: (board) =>
@@ -110,8 +170,8 @@ export const useProjectStore = create((set, get) => ({
   getStats: () => {
     const allActions = get().actions;
     return {
-      totalProjects: get().projects.length,
-      totalTasks: allActions.length,
+      totalForges: get().forges.length,
+      totalActions: allActions.length,
       completed: allActions.filter((a) => a.status === STATUS.CRAFTED).length,
       inProgress: allActions.filter((a) => a.status === STATUS.FORGING).length,
       queued: allActions.filter((a) => a.status === STATUS.QUEUED).length,

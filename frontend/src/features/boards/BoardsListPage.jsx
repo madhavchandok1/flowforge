@@ -17,30 +17,30 @@ import { Columns3, Plus, Search, ArrowRight, Trash2 } from "lucide-react";
 
 export default function BoardsListPage() {
   const boards = useProjectStore((s) => s.boards);
-  const projects = useProjectStore((s) => s.projects);
-  const getProject = useProjectStore((s) => s.getProject);
+  const forges = useProjectStore((s) => s.forges);
+  const getForge = useProjectStore((s) => s.getForge);
   const getActionsForBoard = useProjectStore((s) => s.getActionsForBoard);
-  const getIterationsForProject = useProjectStore((s) => s.getIterationsForProject);
+  const getIterationsForForge = useProjectStore((s) => s.getIterationsForForge);
   const createBoard = useProjectStore((s) => s.createBoard);
   const deleteBoard = useProjectStore((s) => s.deleteBoard);
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
-  const [newBoard, setNewBoard] = useState({ name: "", projectId: "" });
+  const [newBoard, setNewBoard] = useState({ name: "", forgeId: "" });
 
   const filtered = boards.filter((b) => {
-    const project = getProject(b.projectId);
+    const forge = getForge(b.forgeId);
     return (
       b.name.toLowerCase().includes(search.toLowerCase()) ||
-      project?.name.toLowerCase().includes(search.toLowerCase())
+      forge?.name.toLowerCase().includes(search.toLowerCase())
     );
   });
 
   const handleCreate = () => {
-    if (!newBoard.name.trim() || !newBoard.projectId) return;
-    createBoard({ name: newBoard.name.trim(), projectId: newBoard.projectId });
-    setNewBoard({ name: "", projectId: "" });
+    if (!newBoard.name.trim() || !newBoard.forgeId) return;
+    createBoard({ name: newBoard.name.trim(), forgeId: newBoard.forgeId });
+    setNewBoard({ name: "", forgeId: "" });
     setCreateOpen(false);
   };
 
@@ -53,9 +53,9 @@ export default function BoardsListPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Boards</h2>
-          <p className="text-muted-foreground">
-            Manage kanban boards for your projects.
+          <h2 className="text-xl font-bold tracking-tight">Boards</h2>
+          <p className="text-sm text-muted-foreground">
+            Manage kanban boards for your forges.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -68,11 +68,11 @@ export default function BoardsListPage() {
               placeholder="Search boards..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="pl-9 h-9 text-sm"
             />
           </div>
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus size={16} />
+          <Button size="sm" className="h-9 text-sm gap-1.5 shrink-0" onClick={() => setCreateOpen(true)}>
+            <Plus size={15} />
             New Board
           </Button>
         </div>
@@ -81,15 +81,15 @@ export default function BoardsListPage() {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
           <Columns3 size={48} className="mb-4 opacity-30" />
-          <p className="text-lg font-medium">No boards found</p>
+          <p className="text-base font-medium">No boards found</p>
           <p className="text-sm">Create a board to get started.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((board) => {
-            const project = getProject(board.projectId);
+            const forge = getForge(board.forgeId);
             const boardActions = getActionsForBoard(board.id);
-            const iterations = getIterationsForProject(board.projectId);
+            const iterations = getIterationsForForge(board.forgeId);
             return (
               <Card
                 key={board.id}
@@ -100,7 +100,7 @@ export default function BoardsListPage() {
                   <div className="flex items-start justify-between mb-3">
                     <div
                       className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
-                      style={{ backgroundColor: project?.color || "#6366f1" }}
+                      style={{ backgroundColor: forge?.color || "#6366f1" }}
                     >
                       <Columns3 size={20} />
                     </div>
@@ -117,13 +117,13 @@ export default function BoardsListPage() {
                       />
                     </div>
                   </div>
-                  <h3 className="font-semibold text-base mb-1">{board.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {project?.name || "Unknown Project"}
+                  <h3 className="font-semibold text-sm mb-1">{board.name}</h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    {forge?.name || "Unknown Forge"}
                   </p>
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="secondary" className="text-xs">
-                      {boardActions.length} tasks
+                      {boardActions.length} actions
                     </Badge>
                     {iterations.length > 0 && (
                       <Badge variant="outline" className="text-xs">
@@ -159,18 +159,18 @@ export default function BoardsListPage() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Project</label>
+              <label className="text-sm font-medium">Forge</label>
               <select
-                value={newBoard.projectId}
+                value={newBoard.forgeId}
                 onChange={(e) =>
-                  setNewBoard((prev) => ({ ...prev, projectId: e.target.value }))
+                  setNewBoard((prev) => ({ ...prev, forgeId: e.target.value }))
                 }
                 className="w-full h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <option value="">Select a project...</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
+                <option value="">Select a forge...</option>
+                {forges.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
                   </option>
                 ))}
               </select>
@@ -182,7 +182,7 @@ export default function BoardsListPage() {
             </Button>
             <Button
               onClick={handleCreate}
-              disabled={!newBoard.name.trim() || !newBoard.projectId}
+              disabled={!newBoard.name.trim() || !newBoard.forgeId}
             >
               Create
             </Button>

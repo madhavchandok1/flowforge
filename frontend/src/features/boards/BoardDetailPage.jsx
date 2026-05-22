@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router";
 import { useProjectStore } from "@/stores/useProjectStore";
 import { KANBAN_COLUMNS, ACTION_TYPE_LABELS, STATUS_LABELS, ITEM_TYPE } from "@/lib/constants";
@@ -13,13 +14,7 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { motion, LayoutGroup, AnimatePresence } from "framer-motion";
 import {
   DndContext,
   DragOverlay,
@@ -30,11 +25,11 @@ import {
   useDroppable,
   useDraggable,
 } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import {
   ArrowLeft,
   AlertCircle,
   Inbox,
+  ChevronDown,
   ChevronRight,
   BookOpen,
   Layers,
@@ -46,6 +41,92 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// ─── Framer Motion Modal ─────────────────────
+function Modal({ open, onClose, children }) {
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-[8vh]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          onClick={onClose}
+        >
+          <motion.div
+            className="bg-card rounded-lg shadow-lg border w-full max-w-lg mx-4"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.15 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {children}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body
+  );
+}
+
+// ─── Animated Select Dropdown ────────────────
+function AnimatedSelect({ value, onChange, options, placeholder = "Select..." }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm flex items-center gap-2 hover:bg-accent/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        <span className={cn(!selected && "text-muted-foreground")}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <ChevronDown size={14} className={cn("text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.1 }}
+            className="absolute z-50 mt-1 min-w-full bg-popover border rounded-md shadow-md py-1"
+          >
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={cn(
+                  "flex items-center w-full px-2.5 py-1.5 text-sm text-left hover:bg-accent transition-colors",
+                  value === opt.value && "bg-accent"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────
 // Assignee Avatar (small, for cards)
@@ -74,23 +155,21 @@ function AssigneeAvatar({ user, size = "sm" }) {
 // Draggable Task Row (sidebar item)
 // ─────────────────────────────────────────────
 function DraggableTaskRow({ action, onClick }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: action.id,
   });
-  const style = transform
-    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
-    : undefined;
   const isGlitch = action.type === "glitch";
 
   return (
     <TooltipProvider delayDuration={300}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div
+          <motion.div
+            layoutId={`item-${action.id}`}
             ref={setNodeRef}
-            style={style}
             {...attributes}
             {...listeners}
+            style={isDragging ? { opacity: 0.3 } : undefined}
             onClick={(e) => {
               e.stopPropagation();
               onClick?.(action);
@@ -112,7 +191,7 @@ function DraggableTaskRow({ action, onClick }) {
               {action.title}
             </span>
             <AssigneeAvatar user={action.assignee} size="sm" />
-          </div>
+          </motion.div>
         </TooltipTrigger>
         <TooltipContent
           side="top"
@@ -164,17 +243,21 @@ function KanbanCard({ action, isDragging, onClick }) {
 // Draggable Kanban Card (inside columns)
 // ─────────────────────────────────────────────
 function DraggableKanbanCard({ action, onClick }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: action.id,
   });
-  const style = transform
-    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
-    : undefined;
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+    <motion.div
+      layoutId={`item-${action.id}`}
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={isDragging ? { opacity: 0.3 } : undefined}
+      className="cursor-grab active:cursor-grabbing"
+    >
       <KanbanCard action={action} isDragging={isDragging} onClick={onClick} />
-    </div>
+    </motion.div>
   );
 }
 
@@ -414,14 +497,15 @@ function KanbanColumn({ column, actions, onTaskClick, groupByUser }) {
   }, [actions, groupByUser]);
 
   return (
-    <div className="flex flex-col min-w-[260px] max-w-[300px] flex-1 h-full">
+    <div className="flex flex-col max-w-[300px] flex-1 h-full">
       <div className="flex items-center gap-2 mb-3 px-1">
         <h3 className="text-sm font-semibold">{column.label}</h3>
         <Badge variant="secondary" className="text-[10px]">
           {actions.length}
         </Badge>
       </div>
-      <div
+      <motion.div
+        layout
         ref={setNodeRef}
         className={cn(
           "flex-1 space-y-2 p-2 rounded-lg overflow-y-auto",
@@ -455,7 +539,7 @@ function KanbanColumn({ column, actions, onTaskClick, groupByUser }) {
             Drop tasks here
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -535,7 +619,9 @@ export default function BoardDetailPage() {
     return null;
   };
 
-  const handleDragStart = (event) => setActiveId(event.active.id);
+  const handleDragStart = (event) => {
+    setActiveId(event.active.id);
+  };
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
@@ -601,17 +687,12 @@ export default function BoardDetailPage() {
         {/* Controls */}
         <div className="flex items-center gap-3 flex-wrap">
           {/* Sprint Dropdown */}
-          <select
+          <AnimatedSelect
             value={selectedSprint || ""}
-            onChange={(e) => setSelectedSprint(e.target.value)}
-            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            {iterations.map((iter) => (
-              <option key={iter.id} value={iter.id}>
-                {iter.name}
-              </option>
-            ))}
-          </select>
+            onChange={setSelectedSprint}
+            options={iterations.map((iter) => ({ value: iter.id, label: iter.name }))}
+            placeholder="Select sprint..."
+          />
           <Button variant="outline" size="sm" onClick={() => setSprintDialogOpen(true)}>
             <Plus size={14} />
             New Sprint
@@ -620,18 +701,12 @@ export default function BoardDetailPage() {
           <div className="w-px h-6 bg-border" />
 
           {/* User Filter */}
-          <select
+          <AnimatedSelect
             value={filterUser}
-            onChange={(e) => setFilterUser(e.target.value)}
-            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="all">All Users</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
+            onChange={setFilterUser}
+            options={[{ value: "all", label: "All Users" }, ...users.map((u) => ({ value: u.id, label: u.name }))]}
+            placeholder="Filter user..."
+          />
 
           {/* Group by User Toggle */}
           <button
@@ -656,6 +731,7 @@ export default function BoardDetailPage() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
+        <LayoutGroup>
         <div className="flex flex-1 overflow-hidden">
           {/* Backlog — always shows ALL unassigned tasks */}
           <BacklogSidebar
@@ -666,26 +742,40 @@ export default function BoardDetailPage() {
           />
 
           {/* Kanban — filtered by selected sprint */}
-          <div className="flex-1 overflow-x-auto bg-background">
-            <div className="flex gap-5 p-6 min-w-max h-full">
-              {KANBAN_COLUMNS.map((column) => {
-                const columnActions = assignedActions.filter((a) => a.status === column.id);
-                return (
-                  <KanbanColumn
-                    key={column.id}
-                    column={column}
-                    actions={columnActions}
-                    onTaskClick={handleTaskClick}
-                    groupByUser={groupByUser}
-                  />
-                );
-              })}
-            </div>
+          <div className="flex-1 overflow-x-auto overflow-y-hidden bg-background scrollbar-hide">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedSprint}
+                className="flex gap-5 p-6 h-full"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                {KANBAN_COLUMNS.map((column) => {
+                  const columnActions = assignedActions.filter((a) => a.status === column.id);
+                  return (
+                    <KanbanColumn
+                      key={column.id}
+                      column={column}
+                      actions={columnActions}
+                      onTaskClick={handleTaskClick}
+                      groupByUser={groupByUser}
+                    />
+                  );
+                })}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
+        </LayoutGroup>
 
-        <DragOverlay>
-          {activeAction ? <KanbanCard action={activeAction} /> : null}
+        <DragOverlay dropAnimation={null} usePortal={false}>
+          {activeAction ? (
+            <motion.div layoutId={`item-${activeAction.id}`}>
+              <KanbanCard action={activeAction} />
+            </motion.div>
+          ) : null}
         </DragOverlay>
       </DndContext>
 
@@ -707,13 +797,14 @@ export default function BoardDetailPage() {
       })()}
 
       {/* Create Sprint Dialog */}
-      <Dialog open={sprintDialogOpen} onOpenChange={setSprintDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Sprint</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
+      <Modal open={sprintDialogOpen} onClose={() => setSprintDialogOpen(false)}>
+        <div className="p-6">
+          <h3 className="text-lg font-semibold mb-1">Create Sprint</h3>
+          <p className="text-sm text-muted-foreground mb-5">
+            Add a new sprint iteration to this board.
+          </p>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
               <label className="text-sm font-medium">Sprint Name</label>
               <Input
                 placeholder="e.g. Sprint 3"
@@ -722,7 +813,7 @@ export default function BoardDetailPage() {
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium">Start Date</label>
                 <Input
                   type="date"
@@ -730,7 +821,7 @@ export default function BoardDetailPage() {
                   onChange={(e) => setSprintForm((f) => ({ ...f, startDate: e.target.value }))}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium">End Date</label>
                 <Input
                   type="date"
@@ -740,8 +831,8 @@ export default function BoardDetailPage() {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSprintDialogOpen(false)}>
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="ghost" onClick={() => setSprintDialogOpen(false)}>
               Cancel
             </Button>
             <Button
@@ -750,9 +841,9 @@ export default function BoardDetailPage() {
             >
               Create
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

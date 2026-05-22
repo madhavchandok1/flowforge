@@ -20,25 +20,73 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 
 // ─────────────────────────────────────────────
-// Simple select dropdown
+// Animated select dropdown
 // ─────────────────────────────────────────────
 function SimpleSelect({ value, onChange, options, placeholder, className, disabled }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selected = options.find((o) => o.value === value);
+  const displayLabel = selected ? selected.label : placeholder;
+
   return (
-    <div className={cn("relative", className)}>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+    <div ref={ref} className={cn("relative", className)}>
+      <button
+        type="button"
         disabled={disabled}
-        className="w-full h-8 rounded-md border border-input bg-transparent px-2.5 pr-7 text-xs leading-none shadow-sm focus:outline-none focus:ring-1 focus:ring-ring appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={() => !disabled && setOpen((o) => !o)}
+        className="w-full h-8 rounded-md border border-input bg-transparent px-2.5 pr-7 text-xs leading-none shadow-sm flex items-center justify-between cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/50 transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
       >
-        {placeholder && <option value="">{placeholder}</option>}
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+        <span className={cn(!selected && placeholder && "text-muted-foreground/60", "truncate")}>
+          {displayLabel}
+        </span>
+        <ChevronDown size={12} className={cn("text-muted-foreground transition-transform shrink-0", open && "rotate-180")} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.1 }}
+            className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md py-1 max-h-48 overflow-y-auto"
+          >
+            {placeholder && (
+              <button
+                type="button"
+                onClick={() => { onChange(""); setOpen(false); }}
+                className={cn(
+                  "flex items-center w-full px-2.5 py-1.5 text-xs text-left hover:bg-accent transition-colors text-muted-foreground",
+                  !value && "bg-accent"
+                )}
+              >
+                {placeholder}
+              </button>
+            )}
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={cn(
+                  "flex items-center w-full px-2.5 py-1.5 text-xs text-left hover:bg-accent transition-colors",
+                  value === opt.value && "bg-accent"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

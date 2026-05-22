@@ -5,7 +5,7 @@ import Header from "./Header";
 
 const DURATION = 200;
 
-const TRANSITION = `opacity ${DURATION}ms ease-out, transform ${DURATION}ms ease-out`;
+const TRANSITION = `opacity ${DURATION}ms ease-out`;
 
 function OutgoingPage({ children, onDone }) {
   const ref = useRef(null);
@@ -20,7 +20,7 @@ function OutgoingPage({ children, onDone }) {
     void el.offsetHeight;
     // Next frame: slide up + fade + scale down
     requestAnimationFrame(() => {
-      el.style.transition = TRANSITION;
+      el.style.transition = `opacity ${DURATION}ms ease-out, transform ${DURATION}ms ease-out`;
       el.style.opacity = "0";
       el.style.transform = "translateY(-16px) scale(0.99)";
     });
@@ -44,24 +44,33 @@ function IncomingPage({ children }) {
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // Start slightly below, slightly scaled down, slightly transparent
     el.style.transition = "none";
     el.style.opacity = "0";
-    el.style.transform = "translateY(12px) scale(0.99)";
+    el.style.transform = "translateY(12px)";
     void el.offsetHeight;
-    // Next frame: slide to position + fade in
     requestAnimationFrame(() => {
       el.style.transition = TRANSITION;
       el.style.opacity = "1";
-      el.style.transform = "translateY(0) scale(1)";
+      el.style.transform = "translateY(0)";
     });
   }, []);
+
+  const handleTransitionEnd = (e) => {
+    // Clear transform entirely after animation — a lingering transform
+    // creates a containing block that breaks fixed/overlay positioning
+    // (e.g. dnd-kit DragOverlay, portaled dialogs)
+    if (e.propertyName === "opacity") {
+      e.currentTarget.style.transition = "none";
+      e.currentTarget.style.transform = "none";
+    }
+  };
 
   return (
     <div
       ref={ref}
       className="p-6"
-      style={{ opacity: 0, transform: "translateY(12px) scale(0.99)" }}
+      style={{ opacity: 0, transform: "translateY(12px)" }}
+      onTransitionEnd={handleTransitionEnd}
     >
       {children}
     </div>

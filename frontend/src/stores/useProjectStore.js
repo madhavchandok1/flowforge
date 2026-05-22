@@ -80,6 +80,16 @@ export const useProjectStore = create((set, get) => ({
       forges: [...state.forges, { ...forge, id: `forge-${Date.now()}`, createdAt: new Date().toISOString().slice(0, 10), members: [] }],
     })),
 
+  updateForge: (forgeId, updates) =>
+    set((state) => ({
+      forges: state.forges.map((f) => (f.id === forgeId ? { ...f, ...updates } : f)),
+    })),
+
+  deleteForge: (forgeId) =>
+    set((state) => ({
+      forges: state.forges.filter((f) => f.id !== forgeId),
+    })),
+
   updateActionStatus: (actionId, newStatus) =>
     set((state) => ({
       actions: state.actions.map((a) =>
@@ -149,6 +159,11 @@ export const useProjectStore = create((set, get) => ({
   createBoard: (board) =>
     set((state) => ({
       boards: [...state.boards, { ...board, id: `board-${Date.now()}`, createdAt: new Date().toISOString().split("T")[0] }],
+    })),
+
+  updateBoard: (boardId, updates) =>
+    set((state) => ({
+      boards: state.boards.map((b) => (b.id === boardId ? { ...b, ...updates } : b)),
     })),
 
   deleteBoard: (boardId) =>

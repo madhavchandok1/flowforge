@@ -20,7 +20,7 @@ export default function Sidebar() {
       <div className="relative">
         <aside
           className={cn(
-            "flex flex-col h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 ease-in-out",
+            "flex flex-col h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-[width] duration-300 ease-in-out",
             collapsed ? "w-[68px]" : "w-[260px]"
           )}
         >

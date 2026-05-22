@@ -27,21 +27,21 @@ import {
 } from "recharts";
 
 const STAT_ICONS = {
-  totalProjects: FolderKanban,
+  totalForges: FolderKanban,
   completed: CheckCircle2,
   inProgress: Loader2,
   blocked: AlertTriangle,
 };
 
 const STAT_COLORS = {
-  totalProjects: "text-primary",
+  totalForges: "text-primary",
   completed: "text-status-crafted",
   inProgress: "text-status-forging",
   blocked: "text-status-jammed",
 };
 
 const STAT_BG = {
-  totalProjects: "bg-primary/10",
+  totalForges: "bg-primary/10",
   completed: "bg-status-crafted/20",
   inProgress: "bg-status-forging/20",
   blocked: "bg-status-jammed/20",
@@ -63,10 +63,10 @@ export default function DashboardPage() {
   const stats = getStats();
 
   const statCards = [
-    { key: "totalProjects", label: "Total Projects", value: stats.totalProjects },
-    { key: "completed", label: "Completed", value: stats.completed },
-    { key: "inProgress", label: "In Progress", value: stats.inProgress },
-    { key: "blocked", label: "Blocked", value: stats.blocked },
+    { key: "totalForges", label: "Total Forges", value: stats.totalForges },
+    { key: "completed", label: "Crafted", value: stats.completed },
+    { key: "inProgress", label: "Forging", value: stats.inProgress },
+    { key: "blocked", label: "Jammed", value: stats.blocked },
   ];
 
   const pieData = [
@@ -80,10 +80,10 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Welcome */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">
+        <h2 className="text-xl font-bold tracking-tight">
           Welcome back, {user?.name?.split(" ")[0]}
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Here's an overview of your workspace activity.
         </p>
       </div>
@@ -97,8 +97,8 @@ export default function DashboardPage() {
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    <p className="text-3xl font-bold mt-1">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    <p className="text-2xl font-bold mt-1">{stat.value}</p>
                   </div>
                   <div className={`p-3 rounded-xl ${STAT_BG[stat.key]}`}>
                     <Icon size={22} className={STAT_COLORS[stat.key]} />
@@ -115,7 +115,7 @@ export default function DashboardPage() {
         {/* Task Status Pie */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Task Status Distribution</CardTitle>
+            <CardTitle className="text-sm">Action Status Distribution</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[260px]">
@@ -160,7 +160,7 @@ export default function DashboardPage() {
         {/* Monthly Progress */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Monthly Progress</CardTitle>
+            <CardTitle className="text-sm">Monthly Progress</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[260px]">
@@ -205,7 +205,7 @@ export default function DashboardPage() {
       {/* Recent Activity */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Recent Activity</CardTitle>
+          <CardTitle className="text-sm">Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -218,7 +218,7 @@ export default function DashboardPage() {
                   {activity.user.initials}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm">
+                  <p className="text-xs">
                     <span className="font-medium">{activity.user.name}</span>
                     <span className="text-muted-foreground"> {activity.action} </span>
                     <span className="font-medium">{activity.target}</span>

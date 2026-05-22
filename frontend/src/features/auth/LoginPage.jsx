@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { APP_NAME } from "@/lib/constants";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import logo from "@/assets/images/logo.png";
 
 export default function LoginPage() {
   const login = useAuthStore((s) => s.login);
@@ -40,11 +41,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/25">
-            <span className="text-primary-foreground font-bold text-lg">F</span>
-          </div>
-          <span className="font-bold text-2xl tracking-tight">{APP_NAME}</span>
+        <div className="flex items-center justify-center mb-8">
+          <img src={logo} alt={APP_NAME} className="h-18 w-auto" />
         </div>
 
         <Card className="shadow-xl shadow-black/5">
